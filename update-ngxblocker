@@ -144,6 +144,18 @@ find_binary() {
 	done
 }
 
+keep_validate_client_default() {
+	# The downloaded blacklist sets the geo default to 0, which marks every
+	# visitor as whitelisted. Restore the local policy after each download:
+	# 0 = explicit whitelist, 1 = blacklist, 2 = everyone else.
+	local file=$1
+
+	${SED_CMD} -i '/^geo \$validate_client {/{
+n
+s/default[[:space:]]*0;/default		2;/
+}' "$file"
+}
+
 update_paths() {
 	# variables in nginx include files not currently possible
 	# updates hard coded bots.d path in globalblacklist.conf
@@ -366,6 +378,7 @@ main() {
 		case "$retval" in
 			 0) print_message "$dl_msg...${BOLDGREEN}[OK]${RESET}\n\n"
 			    mv $tmp $output
+			    keep_validate_client_default $output
 			    ;;
 			22) printf "$dl_msg...${BOLDRED}ERROR 404: $url${RESET}\n\n";;
 			28) printf "$dl_msg...${BOLDRED}ERROR TIMEOUT: $url${RESET}\n\n";;
